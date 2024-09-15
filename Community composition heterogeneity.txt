@@ -1,0 +1,41 @@
+
+install.packages("ggpubr")
+library(ggpubr)
+library(vegan) 
+
+
+otu <- read.table(file = file.choose(), header = T, row.names = 1,sep = '\t')
+otu_dis <- vegdist(t(otu),method = "bray",binary = F)
+beta = as.matrix(otu_dis)
+
+
+design = read.table(file = file.choose(), header=T, row.names= 1, sep="\t")
+design$group = paste(design$Group, sep = "")
+idx = rownames(design) %in% rownames(beta)
+sub_design=design[idx,]
+sub_beta=beta[rownames(sub_design),rownames(sub_design)]
+tem_adonis <- adonis(as.dist(sub_beta) ~ Group, data = design)
+dispersion <- betadisper(as.dist(sub_beta), group=design$group,type = 'centroid')
+
+write.table(as.data.frame(dispersion$distances), paste0('PCOA_dis点到质心的距离(作图用的)-All ASV.xls'), sep='\t', col.names=NA, quote=F)
+
+eig <- dispersion$eig
+xlab <- paste0('PCoA1 (', format(100 * eig[1] / sum(eig), digits=4), '%)')
+ylab <- paste0('PCoA2 (', format(100 * eig[2] / sum(eig), digits=4), '%)')
+points <- as.data.frame(dispersion$vectors)[,1:2]
+points = cbind(points, design[match(rownames(points),rownames(sub_design)), ])
+points = points[,c(1:2,4)]
+p <- ggscatter(points, x='PCoA1', y='PCoA2', color='group', xlab = xlab, ylab = ylab,
+               alpha = .7, size = 3, mean.point=T, mean.point.size =4, star.plot=T) +
+  stat_ellipse(level = 0.8,aes(group = group,color = group))+
+  scale_color_manual(values = c("#BD3C29","#0172B6","#008F91","#E18727","#7976B2","#6F9AAD"))+
+  geom_hline(yintercept = 0,lty=3,color="grey")+
+  geom_vline(xintercept = 0,lty=3,color="grey")+
+  
+  annotate("text", x = min(points$PCoA1)+0.03, y = max(points$PCoA2)-0.01, 
+           label=paste("PERMANOVA = ", tem_adonis$aov.tab$`Pr(>F)`[1],"\nR2 = ", format(tem_adonis$aov.tab$R2[1],digits=4), sep=""))+
+  theme_bw()+
+  theme(panel.background=element_blank(),
+        panel.grid=element_blank())
+p
+

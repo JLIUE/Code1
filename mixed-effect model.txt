@@ -1,0 +1,18 @@
+install.packages("nlme")
+
+dt<-read.csv(file.choose(),check.names=FALSE)
+library(nlme)
+lm1<- lme(WC ~grazing*salinity*microhabitat,  random=~1|blocks/pairs,data=dt)
+anova(lm1)
+
+dt<-read.table("clipboard",header=T,sep='\t') 
+dt$blocks <- as.factor(dt$blocks) 
+dt$pairs <- as.factor(dt$pairs)
+dt$grazing <- as.factor(dt$grazing)
+dt$salinity <- as.factor(dt$salinity)
+dt$microhabitat<- as.factor(dt$microhabitat)
+str(dt) 
+View(dt) 
+library(nlme)
+lm1<-lme(Cellulose_hydrolysis~grazing*salinity*microhabitat,random=~1|blocks/pairs, data=dt)
+anova(lm1)

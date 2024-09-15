@@ -1,0 +1,47 @@
+otu <- read.delim('otu_table.txt', row.names = 1)
+otu <- t(otu)
+
+dis <- vegan::vegdist(otu, method = 'bray')
+
+dis <- as.matrix(dis)
+write.table(dis, 'Bray-curtis.txt', sep = '\t', col.names = NA, quote = FALSE)
+
+dis <- read.delim('Bray-curtis.txt', row.names = 1)
+
+group <- read.delim('group.txt', stringsAsFactors = FALSE)
+
+env1 <- subset(group, group1 == 'Env1')$samples
+dis_env1 <- dis[env1,env1]
+
+env2 <- subset(group, group1 == 'Env2')$samples
+dis_env2 <- dis[env2,env2]
+
+env3 <- subset(group, group1 == 'Env3')$samples
+dis_env3 <- dis[env3,env3]
+
+
+dis_env1 <- as.vector(as.dist(dis_env1))
+dis_env2 <- as.vector(as.dist(dis_env2))
+dis_env3 <- as.vector(as.dist(dis_env3))
+
+
+dat <- data.frame(
+    dis = c(dis_env1, dis_env2, dis_env3),
+    group = factor(c(
+        rep('Env1', length(dis_env1)), 
+        rep('Env2', length(dis_env2)), 
+        rep('Env3', length(dis_env3))
+    ), levels = c('Env1', 'Env2', 'Env3'))
+)
+
+
+library(ggplot2)
+
+p <- ggplot(dat, aes(group, dis)) +
+geom_boxplot(aes(fill = group), width = 0.6) +
+scale_fill_manual(values = c('#CD5B45', '#228B22', '#00688B')) +
+theme(panel.grid = element_blank(), panel.background = element_blank(), 
+    axis.line = element_line(colour = 'black'), legend.position = 'none') +
+labs(x = NULL, y = 'Bray-Curtis dissimilarity\n')
+
+p
